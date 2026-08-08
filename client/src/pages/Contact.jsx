@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
 import CopyButton from "../components/copy-button";
 import { contactMethods } from "../data/portfolio-data";
 import { EmailIcon, InstagramIcon, PhoneIcon } from "../components/icons";
+import { createContact } from "../services/api";
+import { getErrorMessage } from "../utils/formHelpers";
 
 function ContactIcon({ contactIconType }) {
     const iconStyleClassName = "icon";
@@ -20,21 +23,38 @@ function ContactIcon({ contactIconType }) {
 
 export default function Contact() {
     const navigate = useNavigate();
-    const [form, setForm] = useState({
-        firstName: "",
-        lastName: "",
-        contactNumber: "",
-        email: "",
-        message: "",
+    const [successMessage, setSuccessMessage] = useState("");
+    const [error, setError] = useState(null);
+
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm({
+        defaultValues: {
+            firstName: "",
+            lastName: "",
+            contactNumber: "",
+            email: "",
+            message: "",
+        },
     });
 
-    function handleChange(e) {
-        setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    }
-
-    function handleSubmit(e) {
-        e.preventDefault();
-        navigate("/");
+    async function onSubmit(data) {
+        const { firstName, lastName, contactNumber, email, message } = data;
+        setError(null);
+        try {
+            await createContact({ firstName, lastName, contactNumber, email, message });
+            setSuccessMessage("Message sent successfully!");
+            reset();
+            setTimeout(() => setSuccessMessage(""), 3000);
+            setTimeout(() => navigate("/"), 2000);
+        } catch (err) {
+            console.error("Failed to send message:", err);
+            setError(getErrorMessage(err));
+            setTimeout(() => setError(null), 3000);
+        }
     }
 
     return (
@@ -72,33 +92,40 @@ export default function Contact() {
                     <h2 className="contact-form-heading">Get in Touch</h2>
                 </header>
 
-                <form className="contact-form" onSubmit={handleSubmit}>
+                {error && (
+                    <p className="contact-form__banner contact-form__banner--error" role="alert">
+                        {error}
+                    </p>
+                )}
+                {successMessage && (
+                    <p className="contact-form__banner contact-form__banner--success" role="status">
+                        {successMessage}
+                    </p>
+                )}
+
+                <form className="contact-form" onSubmit={handleSubmit(onSubmit)} noValidate>
                     <div className="contact-form__row">
                         <div className="contact-form__field">
                             <label className="contact-form__label" htmlFor="firstName">First Name</label>
                             <input
                                 id="firstName"
-                                name="firstName"
                                 type="text"
                                 className="contact-form__input"
                                 placeholder="e.g. Robert"
-                                value={form.firstName}
-                                onChange={handleChange}
-                                required
+                                {...register("firstName", { required: "First name is required" })}
                             />
+                            {errors.firstName && <p className="contact-form__field-error">{errors.firstName.message}</p>}
                         </div>
                         <div className="contact-form__field">
                             <label className="contact-form__label" htmlFor="lastName">Last Name</label>
                             <input
                                 id="lastName"
-                                name="lastName"
                                 type="text"
                                 className="contact-form__input"
                                 placeholder="e.g. Tan"
-                                value={form.lastName}
-                                onChange={handleChange}
-                                required
+                                {...register("lastName", { required: "Last name is required" })}
                             />
+                            {errors.lastName && <p className="contact-form__field-error">{errors.lastName.message}</p>}
                         </div>
                     </div>
 
@@ -107,27 +134,25 @@ export default function Contact() {
                             <label className="contact-form__label" htmlFor="contactNumber">Contact Number</label>
                             <input
                                 id="contactNumber"
-                                name="contactNumber"
                                 type="tel"
                                 className="contact-form__input"
                                 placeholder="e.g. +1 416-000-0000"
-                                value={form.contactNumber}
-                                onChange={handleChange}
-                                required
+                                {...register("contactNumber", { required: "Contact number is required" })}
                             />
+                            {errors.contactNumber && (
+                                <p className="contact-form__field-error">{errors.contactNumber.message}</p>
+                            )}
                         </div>
                         <div className="contact-form__field">
                             <label className="contact-form__label" htmlFor="email">Email Address</label>
                             <input
                                 id="email"
-                                name="email"
                                 type="email"
                                 className="contact-form__input"
                                 placeholder="e.g. you@email.com"
-                                value={form.email}
-                                onChange={handleChange}
-                                required
+                                {...register("email", { required: "Email is required" })}
                             />
+                            {errors.email && <p className="contact-form__field-error">{errors.email.message}</p>}
                         </div>
                     </div>
 
@@ -135,18 +160,16 @@ export default function Contact() {
                         <label className="contact-form__label" htmlFor="message">Message</label>
                         <textarea
                             id="message"
-                            name="message"
                             className="contact-form__input contact-form__textarea"
                             placeholder="Write your message here..."
-                            value={form.message}
-                            onChange={handleChange}
-                            required
+                            {...register("message", { required: "Message is required" })}
                         />
+                        {errors.message && <p className="contact-form__field-error">{errors.message.message}</p>}
                     </div>
 
                     <div className="contact-form__actions">
-                        <button type="submit" className="primary-button">
-                            Send Message
+                        <button type="submit" className="primary-button" disabled={isSubmitting}>
+                            {isSubmitting ? "Sending..." : "Send Message"}
                         </button>
                     </div>
                 </form>

@@ -1,7 +1,14 @@
+const dns = require('dns');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
+
+// Some Windows setups (VPNs, VirtualBox/Android virtual adapters) hand Node's
+// resolver a DNS server that can't answer the SRV lookup mongodb+srv:// needs,
+// even though the OS's own nslookup succeeds. Forcing a public resolver here
+// avoids the querySrv ECONNREFUSED failures that causes.
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 
 const app = express();
 

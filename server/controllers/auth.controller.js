@@ -14,7 +14,7 @@ exports.signin = async (req, res) => {
     res.cookie('t', token, { expires: new Date(Date.now() + 24 * 60 * 60 * 1000) });
     return res.json({
       token,
-      user: { _id: user._id, name: user.name, email: user.email }
+      user: { _id: user._id, name: user.name, email: user.email, role: user.role }
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });

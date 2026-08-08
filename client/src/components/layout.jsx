@@ -5,18 +5,27 @@
  */
 
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { CloseIcon, MenuIcon } from "./icons";
 import { navLinks } from "../data/portfolio-data";
+import { useAuth } from "../context/AuthContext";
 
 export default function Layout() {
     // State for mobile menu open/close toggle
     const [menuOpen, setMenuOpen] = useState(false);
     // Get current page location to detect route changes
     const location = useLocation();
+    const navigate = useNavigate();
+    const { user, logout } = useAuth();
     // Get current year for footer copyright
     const currentYear = new Date().getFullYear();
+
+    function handleLogout() {
+        setMenuOpen(false);
+        logout();
+        navigate("/signin");
+    }
 
     // Smooth scroll to top when navigation occurs
     // Dependency: triggers when location.pathname changes
@@ -62,6 +71,35 @@ export default function Layout() {
                                 {navigationLink.label}
                             </NavLink>
                         ))}
+
+                        {/* Auth section - shows welcome/logout when signed in, sign in/up links otherwise */}
+                        <div className="site-nav__auth">
+                            {user ? (
+                                <>
+                                    <span className="site-nav__welcome">Welcome, {user.name}</span>
+                                    <button type="button" className="secondary-button secondary-button--small" onClick={handleLogout}>
+                                        Logout
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <NavLink
+                                        to="/signin"
+                                        onClick={() => setMenuOpen(false)}
+                                        className={({ isActive }) => `site-nav__link ${isActive ? "site-nav__link--active" : ""}`}
+                                    >
+                                        Sign In
+                                    </NavLink>
+                                    <NavLink
+                                        to="/signup"
+                                        onClick={() => setMenuOpen(false)}
+                                        className="secondary-button secondary-button--small"
+                                    >
+                                        Sign Up
+                                    </NavLink>
+                                </>
+                            )}
+                        </div>
                     </nav>
                 </div>
             </header>
