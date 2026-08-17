@@ -74,6 +74,9 @@ export default function About() {
                     <p className="section-body">
                         I am a Software Engineering student passionate about learning modern technologies and creating practical applications. I enjoy turning ideas into projects while developing my technical and problem-solving skills.
                     </p>
+                    <p className="section-body">
+                        As a Software Engineering Technician student, I focus on building reliable full-stack applications using JavaScript, React, and Node.js, with hands-on experience in REST APIs, databases, and version-controlled team workflows. I am eager to apply this foundation to real-world engineering teams, and I am always working to sharpen my skills through coursework and independent projects.
+                    </p>
                 </article>
             </div>
         </section>
