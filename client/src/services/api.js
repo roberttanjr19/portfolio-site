@@ -1,30 +1,44 @@
 import axios from "axios";
 
+// Both default to relative paths so the same build works against whatever
+// origin served it (single-service deploy = same origin as the API).
+// Set VITE_API_URL / VITE_AUTH_URL only when the frontend and backend are
+// deployed as separate services on different origins.
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 // auth.routes.js is mounted at '/auth' in server.js, not under '/api'
-const AUTH_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '/auth') || "http://localhost:3000/auth";
+const AUTH_BASE_URL = import.meta.env.VITE_AUTH_URL || '/auth';
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-API.interceptors.request.use(
-  config => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  error => Promise.reject(error)
-);
+// Separate instance (not API.post(AUTH_BASE_URL + ...)) so a relative
+// AUTH_BASE_URL doesn't get concatenated onto API's own baseURL.
+const AuthAPI = axios.create({
+  baseURL: AUTH_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+const attachAuthToken = config => {
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+};
+
+API.interceptors.request.use(attachAuthToken, error => Promise.reject(error));
+AuthAPI.interceptors.request.use(attachAuthToken, error => Promise.reject(error));
 
 // AUTHENTICATION
 
 const signin = async (email, password) => {
-  const response = await API.post(`${AUTH_BASE_URL}/signin`, { email, password });
+  const response = await AuthAPI.post("/signin", { email, password });
   return response.data;
 };
 
@@ -34,7 +48,7 @@ const signup = async (name, email, password) => {
 };
 
 const signout = async () => {
-  const response = await API.get(`${AUTH_BASE_URL}/signout`);
+  const response = await AuthAPI.get("/signout");
   return response.data;
 };
 

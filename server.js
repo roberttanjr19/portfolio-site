@@ -1,3 +1,4 @@
+const path = require('path');
 const dns = require('dns');
 const express = require('express');
 const mongoose = require('mongoose');
@@ -31,7 +32,7 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-app.get('/', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ message: 'Welcome to My Portfolio application.' });
 });
 
@@ -40,6 +41,16 @@ app.use('/api/projects', require('./server/routes/project.routes'));
 app.use('/api/qualifications', require('./server/routes/qualification.routes'));
 app.use('/api/users', require('./server/routes/user.routes'));
 app.use('/auth', require('./server/routes/auth.routes'));
+
+if (process.env.NODE_ENV === 'production') {
+  // Serve the built React app and hand off any non-API route to it so
+  // client-side routing (React Router) survives a hard refresh/deep link.
+  const clientBuildPath = path.join(__dirname, 'client', 'dist');
+  app.use(express.static(clientBuildPath));
+  app.get(/^\/(?!api\/|auth\/).*/, (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Resource not found' });
@@ -51,6 +62,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`App running in port ${PORT}`);
 });
