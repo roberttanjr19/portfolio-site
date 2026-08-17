@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // auth.routes.js is mounted at '/auth' in server.js, not under '/api'
-const AUTH_BASE_URL = "http://localhost:3000/auth";
+const AUTH_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '/auth') || "http://localhost:3000/auth";
 
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
